@@ -42,3 +42,5 @@ Node 22.19+; peer dependencies match DSH 0.2.1-rc.2. Run `npm install`, `npm tes
 Sources: [text model](https://huggingface.co/LiquidAI/LFM3-1.7B), [vision model](https://huggingface.co/LiquidAI/LFM3-VL-2B), [runtime release](https://github.com/ggml-org/llama.cpp/releases/tag/b11960). The bounded GGUF reader and process/job helpers were adapted from the MIT-licensed [dsh-dory](https://github.com/averyjohnkucan-arch/dsh-dory) plugin. Neither Strata nor NInfer is a dependency.
 
 See [validation notes](docs/validation.md) for the tested hardware, measurements, and limitations.
+
+See [COMPATIBILITY.md](COMPATIBILITY.md) for supported DSH versions and upgrade checks.

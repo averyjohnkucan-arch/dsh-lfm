@@ -1,0 +1,56 @@
+name: DSH compatibility
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 9 * * 1'
+permissions:
+  contents: read
+jobs:
+  compatibility:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        dsh: ['0.2.1-rc.2', 'latest']
+    env:
+      DSH_HOME: ${{ github.workspace }}/.compat-home
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install plugin dependencies
+        run: npm install --ignore-scripts --legacy-peer-deps --package-lock=false --no-audit --no-fund
+      - name: Install the target DSH and align its host packages
+        env:
+          DSH_VERSION: ${{ matrix.dsh }}
+        shell: bash
+        run: |
+          resolved=$(npm view "@deepseek-ai/dsh@$DSH_VERSION" version)
+          mapfile -t peers < <(node --input-type=module -e '
+            import fs from "node:fs";
+            const p=JSON.parse(fs.readFileSync("package.json"));
+            const names=Object.keys({...p.peerDependencies,...p.devDependencies});
+            for (const n of names.filter(n=>n==="@deepseek-ai/dsh"||n.startsWith("@deepseek-ai/dsh-"))) console.log(n+"@"+process.argv[1]);
+          ' "$resolved")
+          npm install --no-save --ignore-scripts --legacy-peer-deps --package-lock=false --no-audit --no-fund "@deepseek-ai/dsh@$resolved" "${peers[@]}"
+      - name: Build and check host exports and client declarations
+        run: |
+          npm run build --if-present
+          npm run check:dsh
+      - name: Test against the target DSH
+        run: npm test
+      - name: Verify packed exports
+        shell: bash
+        run: |
+          archive=$(npm pack --ignore-scripts --json | node -e 'let x="";process.stdin.on("data",v=>x+=v).on("end",()=>console.log(JSON.parse(x)[0].filename))')
+          mkdir -p .compat-packed
+          tar -xzf "$archive" -C .compat-packed
+          ln -s "$GITHUB_WORKSPACE/node_modules" .compat-packed/package/node_modules
+          node scripts/check-dsh-compatibility.mjs .compat-packed/package
