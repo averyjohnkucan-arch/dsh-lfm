@@ -27,19 +27,13 @@ jobs:
           python-version: '3.12'
       - name: Install plugin dependencies
         run: npm install --ignore-scripts --legacy-peer-deps --package-lock=false --no-audit --no-fund
-      - name: Install the target DSH and align its host packages
+      - name: Install a complete isolated DSH and use its host packages
         env:
           DSH_VERSION: ${{ matrix.dsh }}
         shell: bash
         run: |
-          resolved=$(npm view "@deepseek-ai/dsh@$DSH_VERSION" version)
-          mapfile -t peers < <(node --input-type=module -e '
-            import fs from "node:fs";
-            const p=JSON.parse(fs.readFileSync("package.json"));
-            const names=Object.keys({...p.peerDependencies,...p.devDependencies});
-            for (const n of names.filter(n=>n==="@deepseek-ai/dsh"||n.startsWith("@deepseek-ai/dsh-"))) console.log(n+"@"+process.argv[1]);
-          ' "$resolved")
-          npm install --no-save --ignore-scripts --legacy-peer-deps --package-lock=false --no-audit --no-fund "@deepseek-ai/dsh@$resolved" "@deepseek-ai/cordis-plugin-group@~1.0.5" "${peers[@]}"
+          npm install --prefix "$RUNNER_TEMP/dsh-host" --ignore-scripts --no-audit --no-fund "@deepseek-ai/dsh@$DSH_VERSION"
+          node scripts/use-dsh-host.mjs "$RUNNER_TEMP/dsh-host"
       - name: Build and check host exports and client declarations
         run: |
           npm run build --if-present
