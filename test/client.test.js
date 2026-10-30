@@ -119,9 +119,18 @@ test("real settings UI selects files, saves names/KV/context, and prompts for mi
     await tick();
   };
   const click = async (text) => {
-    const b = [...document.querySelectorAll("button")].find(
-      (b) => b.textContent === text,
-    );
+    // The picker commits before its browse effect starts. Wait for the
+    // requested control so slower filesystems do not race that effect.
+    let b;
+    const deadline = Date.now() + 5000;
+    do {
+      await React.act(async () => { await settle(); });
+      b = [...document.querySelectorAll("button")].find(
+        (button) => button.textContent === text,
+      );
+      if (b && !b.disabled) break;
+      await tick();
+    } while (Date.now() < deadline);
     assert.ok(b, text);
     assert.equal(b.disabled, false, text);
     await React.act(async () => {
