@@ -39,7 +39,7 @@ jobs:
             const names=Object.keys({...p.peerDependencies,...p.devDependencies});
             for (const n of names.filter(n=>n==="@deepseek-ai/dsh"||n.startsWith("@deepseek-ai/dsh-"))) console.log(n+"@"+process.argv[1]);
           ' "$resolved")
-          npm install --no-save --ignore-scripts --legacy-peer-deps --package-lock=false --no-audit --no-fund "@deepseek-ai/dsh@$resolved" "${peers[@]}"
+          npm install --no-save --ignore-scripts --legacy-peer-deps --package-lock=false --no-audit --no-fund "@deepseek-ai/dsh@$resolved" "@deepseek-ai/cordis-plugin-group@~1.0.5" "${peers[@]}"
       - name: Build and check host exports and client declarations
         run: |
           npm run build --if-present
