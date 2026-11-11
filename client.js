@@ -67,7 +67,7 @@ window.__ModuleLoader__.load({
       return body.result;
     }
 
-    function FilePicker({ title, start, onChoose, onCancel, run }) {
+    function FilePicker({ title, start, onChoose, onCancel, run, allowMlx }) {
       const [path, setPath] = useState(start || ""),
         [listing, setListing] = useState(null);
       async function open(value) {
@@ -93,7 +93,9 @@ window.__ModuleLoader__.load({
         h(
           "p",
           null,
-          "Choose a GGUF on the computer running DSH. Files stay where they are.",
+          allowMlx
+            ? "Choose a GGUF file, or open a local MLX snapshot folder and select it below. MLX is experimental and requires Apple Silicon."
+            : "Choose a GGUF on the computer running DSH. Files stay where they are.",
         ),
         h(
           "form",
@@ -117,6 +119,10 @@ window.__ModuleLoader__.load({
             "div",
             { className: "lfm-browser" },
             button("↑ Parent folder", () => open(listing.parent)),
+            allowMlx &&
+              button("Use this MLX snapshot folder (experimental)", () =>
+                onChoose(listing.path),
+              ),
             listing.entries.map((entry) =>
               h(
                 "button",
@@ -161,7 +167,8 @@ window.__ModuleLoader__.load({
             ["complete", "failed", "cancelled"].includes(job.status)
           ) {
             seen.current.add(job.id);
-            if (job.result?.needsProjector) setDraft(job.result.profile);
+            if (job.result?.needsProjector || job.result?.needsMlxRuntime)
+              setDraft(job.result.profile);
           }
       };
       useEffect(() => {
@@ -252,6 +259,7 @@ window.__ModuleLoader__.load({
       let contents;
       if (picker)
         contents = h(FilePicker, {
+          allowMlx: picker === "model",
           title:
             picker === "model" ? "Choose LFM model" : "Choose vision projector",
           start:
@@ -302,12 +310,19 @@ window.__ModuleLoader__.load({
             }),
           ),
           h("p", { className: "lfm-file" }, draft.modelPath),
+          draft.backend === "mlx-vlm" &&
+            h(
+              "p",
+              null,
+              "Experimental MLX-VLM text backend. Apple Silicon validation pending. Context is the checkpoint limit; memory fitting and llama.cpp tuning are unavailable.",
+            ),
           field(
             "Context",
             h(
               "select",
               {
                 "aria-label": "Context",
+                disabled: draft.backend === "mlx-vlm",
                 value: draft.context,
                 onChange: (e) => {
                   const context = Number(e.target.value);
@@ -329,20 +344,21 @@ window.__ModuleLoader__.load({
               ),
             ),
           ),
-          h(
-            "div",
-            { className: "lfm-grid" },
-            select(
-              "K cache precision",
-              "kvK",
-              cacheTypes.map((v) => [v, labels[v]]),
+          draft.backend !== "mlx-vlm" &&
+            h(
+              "div",
+              { className: "lfm-grid" },
+              select(
+                "K cache precision",
+                "kvK",
+                cacheTypes.map((v) => [v, labels[v]]),
+              ),
+              select(
+                "V cache precision",
+                "kvV",
+                cacheTypes.map((v) => [v, labels[v]]),
+              ),
             ),
-            select(
-              "V cache precision",
-              "kvV",
-              cacheTypes.map((v) => [v, labels[v]]),
-            ),
-          ),
           checkbox("Thinking by default", "thinking"),
           h(
             "small",
@@ -369,21 +385,28 @@ window.__ModuleLoader__.load({
             "details",
             null,
             h("summary", null, "Advanced"),
-            checkbox("Fit GPU memory automatically", "autoFit"),
+            draft.backend !== "mlx-vlm" &&
+              checkbox("Fit GPU memory automatically", "autoFit"),
             h(
               "p",
               null,
-              "Native memory fitting preserves your selected context and KV precision. Benchmark measures the result; it does not search tuning presets.",
+              draft.backend === "mlx-vlm"
+                ? "Install mlx-vlm >= 0.7.11 in a native arm64 virtualenv and set its Python path below."
+                : "Native memory fitting preserves your selected context and KV precision. Benchmark measures the result; it does not search tuning presets.",
             ),
             h(
               "div",
               { className: "lfm-grid" },
-              !draft.autoFit &&
+              draft.backend !== "mlx-vlm" &&
+                !draft.autoFit &&
                 numeric("GPU layers (0 = CPU)", "gpuLayers", 0, 999),
-              numeric("GPU index", "gpu", 0, 64),
-              numeric("CPU threads", "threads", 1, 256),
-              numeric("Batch size", "batch", 1, 32768),
-              numeric("Microbatch size", "ubatch", 1, draft.batch),
+              draft.backend !== "mlx-vlm" && numeric("GPU index", "gpu", 0, 64),
+              draft.backend !== "mlx-vlm" &&
+                numeric("CPU threads", "threads", 1, 256),
+              draft.backend !== "mlx-vlm" &&
+                numeric("Batch size", "batch", 1, 32768),
+              draft.backend !== "mlx-vlm" &&
+                numeric("Microbatch size", "ubatch", 1, draft.batch),
               numeric("Maximum output tokens", "maxTokens", 1, draft.context),
               numeric("Local port", "port", 1024, 65535),
             ),
@@ -422,15 +445,25 @@ window.__ModuleLoader__.load({
                 repeat_penalty: 1.1,
               }),
             ),
-            field(
-              "Custom llama-server executable",
-              h("input", {
-                "aria-label": "Custom llama-server executable",
-                placeholder: "Use the downloaded runtime",
-                value: draft.executable,
-                onChange: (e) => update("executable", e.target.value),
-              }),
-            ),
+            draft.backend === "mlx-vlm"
+              ? field(
+                  "MLX Python",
+                  h("input", {
+                    "aria-label": "MLX Python",
+                    value: draft.mlxPython,
+                    placeholder: "/absolute/path/to/venv/bin/python",
+                    onChange: (e) => update("mlxPython", e.target.value),
+                  }),
+                )
+              : field(
+                  "Custom llama-server executable",
+                  h("input", {
+                    "aria-label": "Custom llama-server executable",
+                    placeholder: "Use the downloaded runtime",
+                    value: draft.executable,
+                    onChange: (e) => update("executable", e.target.value),
+                  }),
+                ),
             button(
               "Remove profile",
               async () => {
@@ -448,11 +481,12 @@ window.__ModuleLoader__.load({
               () => save("start"),
               busy || (draft.vision && !draft.projectorPath),
             ),
-            button(
-              "Save and benchmark",
-              () => save("benchmark"),
-              busy || (draft.vision && !draft.projectorPath),
-            ),
+            draft.backend !== "mlx-vlm" &&
+              button(
+                "Save and benchmark",
+                () => save("benchmark"),
+                busy || (draft.vision && !draft.projectorPath),
+              ),
           ),
           draft.benchmark && rates(draft.benchmark),
         );
@@ -464,7 +498,7 @@ window.__ModuleLoader__.load({
             h(
               "p",
               null,
-              "Select an LFM3-1.7B or LFM3-VL-2B GGUF. Any weight quantization supported by llama.cpp can be used.",
+              "Select an LFM3-1.7B or LFM3-VL-2B GGUF, or a native LFM3-1.7B MLX snapshot folder (experimental, Apple Silicon).",
             ),
           data.profiles.map((p) =>
             h(

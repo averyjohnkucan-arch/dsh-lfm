@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import vm from "node:vm";
-import { readFile, mkdtemp, rm, mkdir } from "node:fs/promises";
+import { readFile, mkdtemp, rm, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { Runtime } from "../lib/runtime.js";
@@ -174,4 +174,43 @@ test("real settings UI selects files, saves names/KV/context, and prompts for mi
   assert.equal(loaded[1].projectorPath, join(folder, "mmproj.gguf"));
   assert.equal(runtime.profiles.length, 2);
   assert.match(document.body.textContent, /Vision/);
+  const mlx = join(folder, "NativeMLX");
+  await mkdir(mlx);
+  await writeFile(
+    join(mlx, "config.json"),
+    JSON.stringify({
+      model_type: "lfm3",
+      architectures: ["Lfm3ForCausalLM"],
+      hidden_size: 2048,
+      num_hidden_layers: 24,
+      vocab_size: 128000,
+      max_position_embeddings: 262144,
+      quantization: { bits: 4, group_size: 64, mode: "affine" },
+    }),
+  );
+  for (const name of ["tokenizer.json", "tokenizer_config.json"])
+    await writeFile(join(mlx, name), "{}");
+  await writeFile(join(mlx, "model.safetensors"), Buffer.alloc(8));
+  await click("Select model file");
+  await click("📁 NativeMLX");
+  await click("Use this MLX snapshot folder (experimental)");
+  assert.equal(runtime.profiles.length, 3);
+  assert.equal(loaded.length, 2); // Interpreter setup precedes first load.
+  assert.match(document.body.textContent, /Experimental MLX/);
+  assert.ok(document.querySelector('input[aria-label="MLX Python"]'));
+  assert.equal(
+    document.querySelector('select[aria-label="Context"]').disabled,
+    true,
+  );
+  assert.equal(
+    document.querySelector('select[aria-label="K cache precision"]'),
+    null,
+  );
+  assert.equal(document.querySelector('input[aria-label="GPU index"]'), null);
+  assert.equal(
+    [...document.querySelectorAll("button")].some(
+      (b) => b.textContent === "Save and benchmark",
+    ),
+    false,
+  );
 });
