@@ -42,3 +42,7 @@ Node 22.19+; peer dependencies match DSH 0.2.1-rc.2. Run `npm install`, `npm tes
 Sources: [text model](https://huggingface.co/LiquidAI/LFM3-1.7B), [vision model](https://huggingface.co/LiquidAI/LFM3-VL-2B), [runtime release](https://github.com/ggml-org/llama.cpp/releases/tag/b11960). The bounded GGUF reader and process/job helpers were adapted from the MIT-licensed [dsh-dory](https://github.com/averyjohnkucan-arch/dsh-dory) plugin. Neither Strata nor NInfer is a dependency.
 
 See [validation notes](docs/validation.md) for the tested hardware, measurements, and limitations.
+
+## Experimental Apple Silicon MLX prototype
+
+Native quantized LFM3-1.7B text snapshots can optionally use MLX-VLM instead of llama.cpp. This path requires a separately installed native arm64 Python environment and has not been validated on Apple Silicon. Existing GGUF profiles continue to use llama.cpp. See [MLX compatibility findings, setup and hardware validation](docs/MLX.md).
