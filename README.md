@@ -1,5 +1,7 @@
 # LFM for DeepSeek Harness
 
+**RC4 installation trial.** Start DeepSeek Harness with `npx @deepseek-ai/dsh@0.2.2-rc.4 web` (Node.js 24.9 or newer). In **Plugins → Add plugin**, paste the full path to this RC4 trial’s `.tgz` file and enable the plugin.
+
 A small local provider for **LiquidAI LFM3-1.7B** and **LFM3-VL-2B**. It accepts GGUF weight quantizations supported by the included llama.cpp release, including unquantized BF16 and FP16. Other model families and raw Safetensors are not accepted.
 
 ## Use
@@ -37,7 +39,7 @@ Only plugin-owned engines are stopped. An active model in another GPU process mu
 
 ## Development
 
-Node 22.19+; peer dependencies match DSH 0.2.1-rc.2. Run `npm install`, `npm test`, and `npm run check`. The plugin has no Python or compilation requirement. Tests use synthetic GGUF headers and an isolated DOM; native integration validation is recorded separately.
+Node 24.9+; peer dependencies match DSH 0.2.2-rc.4. Run `npm install`, `npm test`, and `npm run check`. The plugin has no Python or compilation requirement. Tests use synthetic GGUF headers and an isolated DOM; native integration validation is recorded separately.
 
 Sources: [text model](https://huggingface.co/LiquidAI/LFM3-1.7B), [vision model](https://huggingface.co/LiquidAI/LFM3-VL-2B), [runtime release](https://github.com/ggml-org/llama.cpp/releases/tag/b11960). The bounded GGUF reader and process/job helpers were adapted from the MIT-licensed [dsh-dory](https://github.com/averyjohnkucan-arch/dsh-dory) plugin. Neither Strata nor NInfer is a dependency.
 

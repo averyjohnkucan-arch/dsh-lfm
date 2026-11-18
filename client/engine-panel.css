@@ -1,0 +1,62 @@
+.dsh-engine-panel[class] {
+  box-sizing: border-box;
+  margin-top: 16px;
+  padding: 18px;
+  min-width: 0;
+  border: 1px solid var(--dsw-alias-border-l3, currentColor);
+  border-radius: 12px;
+  background: var(--dsw-alias-settings-card-fill, transparent);
+  color: var(--dsw-alias-label-primary, inherit);
+  font: inherit;
+}
+.dsh-engine-panel .dsh-engine-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--dsw-alias-border-l3, currentColor);
+}
+.dsh-engine-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 650;
+}
+.dsh-engine-panel .dsh-engine-header h3 small {
+  display: inline;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--dsw-alias-label-secondary, inherit);
+}
+.dsh-engine-status {
+  margin-top: 4px;
+  font-size: 0.875rem;
+  color: var(--dsw-alias-label-secondary, inherit);
+}
+.dsh-engine-panel[class] button,
+.dsh-engine-panel[class] select,
+.dsh-engine-panel[class]
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) {
+  border-radius: 7px;
+  padding: 7px 10px;
+  font: inherit;
+  border: 1px solid var(--dsw-alias-border-l3, currentColor);
+}
+.dsh-engine-panel button:focus-visible,
+.dsh-engine-panel input:focus-visible,
+.dsh-engine-panel select:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+/* First model */
+.dsh-engine-panel .dsh-engine-guide {
+  margin: 0 0 12px;
+}
+.dsh-engine-guide summary {
+  cursor: pointer;
+}
+.dsh-engine-guide li {
+  margin: 5px 0;
+}

@@ -1,0 +1,5 @@
+[
+  "Choose Select model file and open an LFM3 GGUF.",
+  "For vision, select the matching projector if prompted.",
+  "Once the profile loads, select it in chat."
+]
