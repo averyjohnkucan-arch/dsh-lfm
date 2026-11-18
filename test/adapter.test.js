@@ -158,6 +158,48 @@ test("DSH wire preserves images/tools, applies per-turn thinking and balances le
   assert.equal(acquired, 4);
   assert.equal(released, 4);
   assert.equal(state.active, 0);
+  const textProfile = freshProfile({
+    group: "Text",
+    model: "LFM3-1.7B",
+    vision: false,
+    path: "/text.gguf",
+    nativeContext: 262144,
+  });
+  Object.assign(p, textProfile, { id: p.id, port: p.port });
+  delete p.defaultMode;
+  const [creative, rigid] = p.reasoningModes;
+  async function sample(effort) {
+    for await (const chunk of adapter.stream({
+      provider: "lfm",
+      model: p.id,
+      reasoningEffort: effort,
+      maxTokens: 16,
+      messages: [{ role: "user", content: [{ type: "text", text: "Test" }] }],
+    })) {
+      if (chunk.type === "finish") assert.equal(chunk.reason.kind, "stop");
+    }
+    const sent = bodies.at(-1);
+    assert.equal(sent.chat_template_kwargs.enable_thinking, true);
+    return Object.fromEntries(Object.keys(p.sampling).map((k) => [k, sent[k]]));
+  }
+  const midpoint = {
+    temperature: 0.55,
+    top_p: 0.975,
+    top_k: 35,
+    min_p: 0,
+    repeat_penalty: 1.05,
+  };
+  assert.deepEqual(await sample(undefined), midpoint);
+  creative.name = "Renamed";
+  creative.sampling.temperature = 0.6;
+  rigid.sampling.top_k = 51;
+  assert.deepEqual(await sample("on"), {
+    ...midpoint,
+    temperature: 0.35,
+    top_k: 36,
+  });
+  p.reasoningModes = [];
+  assert.deepEqual(await sample("on"), midpoint);
   state.benchmarking = true;
   await assert.rejects(async () => {
     for await (const _ of adapter.stream({

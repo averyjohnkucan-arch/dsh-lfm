@@ -26,5 +26,5 @@ jobs:
         run: |
           version=$(node -p 'JSON.parse(require("fs").readFileSync("package.json")).version')
           if ! gh release view "v$version" >/dev/null 2>&1; then
-            gh release create "v$version" "/tmp/dsh-lfm-$version.tgz" --target "$GITHUB_SHA" --title "LFM $version" --notes 'Create named chat reasoning modes with independent thinking, sampling, and output limits. Includes editable Math/Sci - Creative and Code/Tools - Rigid modes for LFM3-1.7B. Supports DeepSeek Harness 0.2.2-rc.4.'
+            gh release create "v$version" "/tmp/dsh-lfm-$version.tgz" --target "$GITHUB_SHA" --title "LFM $version" --notes 'Thinking on LFM3-1.7B now uses the sampling midpoint between the editable Creative and Rigid modes. Supports DeepSeek Harness 0.2.2-rc.4.'
           fi

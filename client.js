@@ -48,6 +48,25 @@ var defaultSampling = Object.freeze({
   min_p: 0,
   repeat_penalty: 1.1
 });
+var mathSampling = Object.freeze({
+  temperature: 1,
+  top_p: 0.95,
+  top_k: 20,
+  min_p: 0,
+  repeat_penalty: 1
+});
+function thinkingSampling(profile) {
+  if (profile.vision) return profile.sampling;
+  const modes = profile.reasoningModes;
+  const creative = modes.find((m) => m.id === "mode-math")?.sampling ?? mathSampling;
+  const rigid = modes.find((m) => m.id === "mode-code")?.sampling ?? defaultSampling;
+  const midpoint = {};
+  for (const key of Object.keys(defaultSampling)) {
+    const mean = (Number(creative[key]) + Number(rigid[key])) / 2;
+    midpoint[key] = key === "top_k" ? Math.round(mean) : Number(mean.toPrecision(15));
+  }
+  return midpoint;
+}
 function reasoningOptions(profile) {
   return [
     { id: "on", name: "Thinking" },
@@ -71,6 +90,7 @@ function ReasoningModes({ draft, setDraft, busy }) {
   const [editing, setEditing] = (0, import_react.useState)("");
   const modes = draft.reasoningModes;
   const mode = modes.find((m) => m.id === editing);
+  const midpoint = !draft.vision && thinkingSampling(draft);
   function edit(patch) {
     setDraft((p) => ({
       ...p,
@@ -120,7 +140,7 @@ function ReasoningModes({ draft, setDraft, busy }) {
       }
     },
     reasoningOptions(draft).map((option) => /* @__PURE__ */ import_react.default.createElement("option", { key: option.id, value: option.id }, option.name || "New mode"))
-  )), /* @__PURE__ */ import_react.default.createElement("div", { className: "lfm-actions" }, modes.map((m) => /* @__PURE__ */ import_react.default.createElement(
+  )), midpoint && /* @__PURE__ */ import_react.default.createElement("p", null, "Thinking uses the midpoint of the Creative and Rigid presets.", " ", controls.map(([key, label]) => label + " " + midpoint[key]).join(" \xB7 ")), /* @__PURE__ */ import_react.default.createElement("div", { className: "lfm-actions" }, modes.map((m) => /* @__PURE__ */ import_react.default.createElement(
     "button",
     {
       key: m.id,
@@ -252,7 +272,7 @@ var engine_panel_default = '.dsh-engine-panel[class] {\n  box-sizing: border-box
 // package.json
 var package_default = {
   name: "dsh-lfm",
-  version: "0.1.3",
+  version: "0.1.4",
   description: "Local LFM3-1.7B and LFM3-VL-2B models for DeepSeek Harness.",
   type: "module",
   license: "MIT",
@@ -675,7 +695,7 @@ function Card() {
           numeric("Maximum output tokens", "maxTokens", 1, draft.context),
           numeric("Local port", "port", 1024, 65535)
         ),
-        h("h4", null, "Sampling"),
+        h("h4", null, draft.vision ? "Sampling" : "Sampling for Off and new modes"),
         h(
           "div",
           { className: "lfm-grid" },

@@ -1,5 +1,9 @@
 import React, { useState } from "react";
-import { defaultEffort, reasoningOptions } from "../lib/reasoning.js";
+import {
+  defaultEffort,
+  reasoningOptions,
+  thinkingSampling,
+} from "../lib/reasoning.js";
 
 const controls = [
   ["temperature", "Temperature", 0, 5],
@@ -13,6 +17,7 @@ export function ReasoningModes({ draft, setDraft, busy }) {
   const [editing, setEditing] = useState("");
   const modes = draft.reasoningModes;
   const mode = modes.find((m) => m.id === editing);
+  const midpoint = !draft.vision && thinkingSampling(draft);
   function edit(patch) {
     setDraft((p) => ({
       ...p,
@@ -73,6 +78,14 @@ export function ReasoningModes({ draft, setDraft, busy }) {
           ))}
         </select>
       </label>
+      {midpoint && (
+        <p>
+          Thinking uses the midpoint of the Creative and Rigid presets.{" "}
+          {controls
+            .map(([key, label]) => label + " " + midpoint[key])
+            .join(" · ")}
+        </p>
+      )}
       <div className="lfm-actions">
         {modes.map((m) => (
           <button

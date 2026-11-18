@@ -34,6 +34,8 @@ Open **Settings → Models → LFM → Settings → Reasoning modes**. Choose **
 
 LFM3-1.7B starts with **Math/Sci - Creative** and **Code/Tools - Rigid**, both with thinking enabled. Math/Sci uses Liquid’s math settings (temperature 1, top p 0.95, top k 20), with min p 0 and a neutral repeat penalty of 1. Code/Tools uses temperature 0.1, top p 1, top k 50, min p 0 and repeat penalty 1.1. You can rename, edit, or remove either mode. Vision profiles support the same editor. Profile export and import include your modes and default choice.
 
+For LFM3-1.7B, **Thinking** averages the five sampling values from the Creative and Rigid presets. With their original settings that gives temperature **0.55**, top p **0.975**, top k **35**, min p **0**, and repeat penalty **1.05**. Edits to either preset update the midpoint, even after renaming it. Removing a preset uses its original sampling values in the calculation. Top k rounds to the nearest integer. Thinking uses the profile’s output limit.
+
 Switching modes or saving only request settings keeps a loaded model in memory. Changing context, cache precision or engine placement can require a reload.
 
 ## Settings

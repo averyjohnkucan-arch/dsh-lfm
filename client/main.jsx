@@ -385,7 +385,7 @@ import React from "react";
               numeric("Maximum output tokens", "maxTokens", 1, draft.context),
               numeric("Local port", "port", 1024, 65535),
             ),
-            h("h4", null, "Sampling"),
+            h("h4", null, draft.vision ? "Sampling" : "Sampling for Off and new modes"),
             h(
               "div",
               { className: "lfm-grid" },
