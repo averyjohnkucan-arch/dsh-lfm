@@ -43,6 +43,21 @@ test("DSH wire preserves images/tools, applies per-turn thinking and balances le
     nativeContext: 128000,
   });
   p.port = server.address().port;
+  p.reasoningModes = [
+    {
+      id: "mode-test",
+      name: "Custom careful",
+      thinking: false,
+      maxTokens: 7,
+      sampling: {
+        temperature: 0.7,
+        top_k: 22,
+        top_p: 0.9,
+        min_p: 0.08,
+        repeat_penalty: 1.23,
+      },
+    },
+  ];
   let acquired = 0,
     released = 0;
   const state = { active: 0, gate: Promise.resolve(), apiKey: "local-fixture" };
@@ -51,6 +66,7 @@ test("DSH wire preserves images/tools, applies per-turn thinking and balances le
     running: new Map([[p.id, state]]),
     changed() {},
     acquire: async (_p, signal) => {
+      assert.deepEqual(_p, p); // A per-turn override must never reach GPU scheduling.
       acquired++;
       return {
         state,
@@ -90,7 +106,14 @@ test("DSH wire preserves images/tools, applies per-turn thinking and balances le
     (await adapter.resolveModel("lfm", p.id)).reasoning.defaultEffort,
     "on",
   );
-  for (const effort of ["off", "on"]) {
+  p.defaultMode = "mode-test";
+  const info = (await adapter.resolveModel("lfm", p.id)).reasoning;
+  assert.equal(info.defaultEffort, "mode-test");
+  assert.deepEqual(info.efforts.at(-1), {
+    id: "mode-test",
+    name: "Custom careful",
+  });
+  for (const effort of ["off", "on", "mode-test", undefined]) {
     for await (const chunk of adapter.stream({
       provider: "lfm",
       model: p.id,
@@ -125,8 +148,15 @@ test("DSH wire preserves images/tools, applies per-turn thinking and balances le
     "data:image/png;base64,cG5n",
   );
   assert.equal(bodies[0].tools[0].function.name, "inspect_layout");
-  assert.equal(acquired, 2);
-  assert.equal(released, 2);
+  for (const body of bodies.slice(2)) {
+    assert.equal(body.chat_template_kwargs.enable_thinking, false);
+    assert.equal(body.max_tokens ?? body.max_completion_tokens, 7);
+    for (const [key, value] of Object.entries(p.reasoningModes[0].sampling))
+      assert.equal(body[key], value, key);
+    assert.equal(body.reasoning_effort, undefined);
+  }
+  assert.equal(acquired, 4);
+  assert.equal(released, 4);
   assert.equal(state.active, 0);
   state.benchmarking = true;
   await assert.rejects(async () => {

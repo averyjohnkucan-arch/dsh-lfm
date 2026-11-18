@@ -28,6 +28,14 @@ For VL, place its matching `mmproj` GGUF beside the model or in an immediate sub
 
 Each quantization can have its own profile and editable name. The text model advertises text input; VL advertises text and image input through DSH's attachment service.
 
+## Name a reasoning mode
+
+Open **Settings → Models → LFM → Settings → Reasoning modes**. Choose **Add reasoning mode**, enter the label you want in chat, switch **Enable thinking** on or off, and set the sampling values and maximum output tokens. Click **Save reasoning mode**. Select that label from the chat reasoning picker for your next message. To use it automatically, choose it under **Default reasoning mode** and save.
+
+LFM3-1.7B starts with **Math/Sci - Creative** and **Code/Tools - Rigid**, both with thinking enabled. Math/Sci uses Liquid’s math settings (temperature 1, top p 0.95, top k 20), with min p 0 and a neutral repeat penalty of 1. Code/Tools uses temperature 0.1, top p 1, top k 50, min p 0 and repeat penalty 1.1. You can rename, edit, or remove either mode. Vision profiles support the same editor. Profile export and import include your modes and default choice.
+
+Switching modes or saving only request settings keeps a loaded model in memory. Changing context, cache precision or engine placement can require a reload.
+
 ## Settings
 
 - **Context:** defaults to the GGUF's native value, with smaller choices in 32,768-token increments. The official text GGUF specifies 262,144; the official VL GGUF specifies 128,000.

@@ -24,6 +24,16 @@ test("portable config restores renamed vision shards, projector and settings to 
   await runtime.save({
     ...p,
     name: "Camera",
+    reasoningModes: [
+      {
+        id: "mode-vision",
+        name: "My Vision",
+        thinking: false,
+        maxTokens: 99,
+        sampling: { ...p.sampling, temperature: 0.2 },
+      },
+    ],
+    defaultMode: "mode-vision",
     context: 65536,
     kvK: "q8_0",
     executable: "/local/private",
@@ -61,6 +71,8 @@ test("portable config restores renamed vision shards, projector and settings to 
   assert.notEqual(p.id, q.id);
   assert.notEqual(p.port, q.port);
   assert.equal(q.name, "Camera");
+  assert.deepEqual(q.reasoningModes, runtime.find(p.id).reasoningModes);
+  assert.equal(q.defaultMode, "mode-vision");
   assert.equal(q.thinking, false);
   assert.equal(q.kvK, "q8_0");
   assert.equal(q.context, 65536);

@@ -93,3 +93,49 @@ test("busy profiles cannot be edited or unloaded, and browser follows model dire
   await runtime.action("remove", { id: p.id });
   assert.equal(runtime.profiles.length, 0);
 });
+
+test("reasoning modes migrate, persist, and reuse a resident engine until launch settings change", async (t) => {
+  const { runtime, dir, path } = await setup(t);
+  const p = await runtime.addModel(path);
+  const { reasoningModes, ...legacy } = p;
+  assert.deepEqual(validateProfile(legacy).reasoningModes, reasoningModes);
+  assert.deepEqual(
+    reasoningModes.map((m) => m.name),
+    ["Math/Sci - Creative", "Code/Tools - Rigid"],
+  );
+  const fingerprint = runtime.driver(p).fingerprint;
+  let unloads = 0;
+  runtime.unload = async () => {
+    unloads++;
+  };
+  const updated = await runtime.save({
+    ...p,
+    defaultMode: reasoningModes[0].id,
+    reasoningModes: reasoningModes.map((m) => ({
+      ...m,
+      name: m.name + " edited",
+      thinking: false,
+    })),
+  });
+  assert.equal(runtime.driver(updated).fingerprint, fingerprint);
+  assert.equal(unloads, 0);
+  const restarted = new Runtime({ dataDir: dir });
+  await restarted.init();
+  assert.deepEqual(restarted.find(p.id), updated);
+  await restarted.dispose();
+  assert.throws(
+    () => validateProfile({ ...updated, reasoningModes: [] }),
+    /default/,
+  );
+  assert.throws(
+    () =>
+      validateProfile({
+        ...updated,
+        reasoningModes: [reasoningModes[0], reasoningModes[0]],
+      }),
+    /duplicate/,
+  );
+  const changed = await runtime.save({ ...updated, kvV: "q8_0" });
+  assert.equal(unloads, 1);
+  assert.notEqual(runtime.driver(changed).fingerprint, fingerprint);
+});

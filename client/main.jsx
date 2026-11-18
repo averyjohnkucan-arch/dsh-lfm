@@ -1,3 +1,4 @@
+import { ReasoningModes } from "./ReasoningModes.jsx";
 import { ImportConfig, DownloadConfig } from "./ProfileTransfer.jsx";
 import { EngineHeader } from "./EngineHeader.jsx";
 import React from "react";
@@ -316,6 +317,7 @@ import React from "react";
                     ...p,
                     context,
                     maxTokens: Math.min(context, p.maxTokens),
+                    reasoningModes: p.reasoningModes.map((m) => ({ ...m, maxTokens: Math.min(context, m.maxTokens) })),
                   }));
                 },
               },
@@ -344,12 +346,7 @@ import React from "react";
               cacheTypes.map((v) => [v, labels[v]]),
             ),
           ),
-          checkbox("Thinking by default", "thinking"),
-          h(
-            "small",
-            null,
-            "Direct mode requests no thinking. Liquid notes that this can be inconsistent.",
-          ),
+          h(ReasoningModes, { key: draft.id, draft, setDraft, busy }),
           draft.vision &&
             h(
               "section",

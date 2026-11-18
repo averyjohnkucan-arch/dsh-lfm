@@ -37,13 +37,161 @@ __export(main_exports, {
 });
 module.exports = __toCommonJS(main_exports);
 
-// client/ProfileTransfer.jsx
+// client/ReasoningModes.jsx
 var import_react = __toESM(require("react"), 1);
+
+// lib/reasoning.js
+var defaultSampling = Object.freeze({
+  temperature: 0.1,
+  top_p: 1,
+  top_k: 50,
+  min_p: 0,
+  repeat_penalty: 1.1
+});
+function reasoningOptions(profile) {
+  return [
+    { id: "on", name: "Thinking" },
+    { id: "off", name: "Off" },
+    ...profile.reasoningModes.map(({ id, name }) => ({ id, name }))
+  ];
+}
+function defaultEffort(profile) {
+  return profile.defaultMode || (profile.thinking ? "on" : "off");
+}
+
+// client/ReasoningModes.jsx
+var controls = [
+  ["temperature", "Temperature", 0, 5],
+  ["top_p", "Top p", 1e-6, 1],
+  ["top_k", "Top k", 0, 128e3],
+  ["min_p", "Min p", 0, 1],
+  ["repeat_penalty", "Repeat penalty", 1e-6, 5]
+];
+function ReasoningModes({ draft, setDraft, busy }) {
+  const [editing, setEditing] = (0, import_react.useState)("");
+  const modes = draft.reasoningModes;
+  const mode = modes.find((m) => m.id === editing);
+  function edit(patch) {
+    setDraft((p) => ({
+      ...p,
+      reasoningModes: p.reasoningModes.map(
+        (m) => m.id === editing ? { ...m, ...patch } : m
+      )
+    }));
+  }
+  function add() {
+    const bytes = new Uint32Array(4);
+    window.crypto.getRandomValues(bytes);
+    const id = "mode-" + Array.from(bytes, (n) => n.toString(16).padStart(8, "0")).join("");
+    setDraft((p) => ({
+      ...p,
+      reasoningModes: [
+        ...p.reasoningModes,
+        {
+          id,
+          name: "",
+          thinking: p.thinking,
+          sampling: { ...p.sampling },
+          maxTokens: p.maxTokens
+        }
+      ]
+    }));
+    setEditing(id);
+  }
+  function remove() {
+    setDraft((p) => ({
+      ...p,
+      defaultMode: p.defaultMode === editing ? void 0 : p.defaultMode,
+      reasoningModes: p.reasoningModes.filter((m) => m.id !== editing)
+    }));
+    setEditing("");
+  }
+  return /* @__PURE__ */ import_react.default.createElement("section", { "aria-label": "Reasoning modes" }, /* @__PURE__ */ import_react.default.createElement("h4", null, "Reasoning modes"), /* @__PURE__ */ import_react.default.createElement("label", { className: "lfm-field" }, "Default reasoning mode", /* @__PURE__ */ import_react.default.createElement(
+    "select",
+    {
+      value: defaultEffort(draft),
+      onChange: (e) => {
+        const id = e.target.value;
+        setDraft((p) => ({
+          ...p,
+          defaultMode: id.startsWith("mode-") ? id : void 0,
+          thinking: id === "off" ? false : id === "on" ? true : p.thinking
+        }));
+      }
+    },
+    reasoningOptions(draft).map((option) => /* @__PURE__ */ import_react.default.createElement("option", { key: option.id, value: option.id }, option.name || "New mode"))
+  )), /* @__PURE__ */ import_react.default.createElement("div", { className: "lfm-actions" }, modes.map((m) => /* @__PURE__ */ import_react.default.createElement(
+    "button",
+    {
+      key: m.id,
+      type: "button",
+      "aria-pressed": editing === m.id,
+      onClick: () => setEditing(m.id)
+    },
+    m.name || "New mode"
+  )), /* @__PURE__ */ import_react.default.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: add,
+      disabled: modes.some((m) => !m.name.trim())
+    },
+    "Add reasoning mode"
+  )), mode && /* @__PURE__ */ import_react.default.createElement("fieldset", null, /* @__PURE__ */ import_react.default.createElement("legend", null, "Chat reasoning option"), /* @__PURE__ */ import_react.default.createElement("label", { className: "lfm-field" }, "Mode name", /* @__PURE__ */ import_react.default.createElement(
+    "input",
+    {
+      required: true,
+      maxLength: 100,
+      placeholder: "Name shown in chat",
+      value: mode.name,
+      onChange: (e) => edit({ name: e.target.value })
+    }
+  )), /* @__PURE__ */ import_react.default.createElement("label", { className: "lfm-check" }, /* @__PURE__ */ import_react.default.createElement(
+    "input",
+    {
+      type: "checkbox",
+      checked: mode.thinking,
+      onChange: (e) => edit({ thinking: e.target.checked })
+    }
+  ), "Enable thinking"), /* @__PURE__ */ import_react.default.createElement("div", { className: "lfm-grid" }, controls.map(([key, label, min, max]) => /* @__PURE__ */ import_react.default.createElement("label", { key, className: "lfm-field" }, label, /* @__PURE__ */ import_react.default.createElement(
+    "input",
+    {
+      type: "number",
+      required: true,
+      min,
+      max,
+      step: key === "top_k" ? 1 : "any",
+      value: mode.sampling[key],
+      onChange: (e) => edit({
+        sampling: {
+          ...mode.sampling,
+          [key]: e.target.value === "" ? "" : Number(e.target.value)
+        }
+      })
+    }
+  ))), /* @__PURE__ */ import_react.default.createElement("label", { className: "lfm-field" }, "Maximum output tokens", /* @__PURE__ */ import_react.default.createElement(
+    "input",
+    {
+      type: "number",
+      required: true,
+      min: 1,
+      max: draft.context,
+      step: 1,
+      value: mode.maxTokens,
+      onChange: (e) => edit({
+        maxTokens: e.target.value === "" ? "" : Number(e.target.value)
+      })
+    }
+  ))), /* @__PURE__ */ import_react.default.createElement("div", { className: "lfm-actions" }, /* @__PURE__ */ import_react.default.createElement("button", { type: "submit", disabled: busy }, "Save reasoning mode"), /* @__PURE__ */ import_react.default.createElement("button", { type: "button", onClick: remove }, "Remove mode"))));
+}
+
+// client/ProfileTransfer.jsx
+var import_react2 = __toESM(require("react"), 1);
 function ImportConfig({ run, busy }) {
-  const [file, setFile] = (0, import_react.useState)(null);
-  const [root, setRoot] = (0, import_react.useState)("");
-  const [error, setError] = (0, import_react.useState)("");
-  const [reading, setReading] = (0, import_react.useState)(false);
+  const [file, setFile] = (0, import_react2.useState)(null);
+  const [root, setRoot] = (0, import_react2.useState)("");
+  const [error, setError] = (0, import_react2.useState)("");
+  const [reading, setReading] = (0, import_react2.useState)(false);
   async function submit(event) {
     event.preventDefault();
     setError("");
@@ -61,7 +209,7 @@ function ImportConfig({ run, busy }) {
       setReading(false);
     }
   }
-  return /* @__PURE__ */ import_react.default.createElement("details", null, /* @__PURE__ */ import_react.default.createElement("summary", null, "Import config"), /* @__PURE__ */ import_react.default.createElement("form", { onSubmit: submit }, /* @__PURE__ */ import_react.default.createElement("fieldset", { disabled: busy || reading }, /* @__PURE__ */ import_react.default.createElement("label", null, "Profile JSON", " ", /* @__PURE__ */ import_react.default.createElement(
+  return /* @__PURE__ */ import_react2.default.createElement("details", null, /* @__PURE__ */ import_react2.default.createElement("summary", null, "Import config"), /* @__PURE__ */ import_react2.default.createElement("form", { onSubmit: submit }, /* @__PURE__ */ import_react2.default.createElement("fieldset", { disabled: busy || reading }, /* @__PURE__ */ import_react2.default.createElement("label", null, "Profile JSON", " ", /* @__PURE__ */ import_react2.default.createElement(
     "input",
     {
       required: true,
@@ -69,7 +217,7 @@ function ImportConfig({ run, busy }) {
       accept: ".json,application/json",
       onChange: (e) => setFile(e.target.files[0])
     }
-  )), /* @__PURE__ */ import_react.default.createElement("label", null, "Model folder on the DSH computer", " ", /* @__PURE__ */ import_react.default.createElement(
+  )), /* @__PURE__ */ import_react2.default.createElement("label", null, "Model folder on the DSH computer", " ", /* @__PURE__ */ import_react2.default.createElement(
     "input",
     {
       required: true,
@@ -77,7 +225,7 @@ function ImportConfig({ run, busy }) {
       placeholder: "/path/to/models",
       onChange: (e) => setRoot(e.target.value)
     }
-  )), /* @__PURE__ */ import_react.default.createElement("button", { disabled: !file || !root.trim(), type: "submit" }, "Find files and import profile"))), error && /* @__PURE__ */ import_react.default.createElement("p", { role: "alert" }, error));
+  )), /* @__PURE__ */ import_react2.default.createElement("button", { disabled: !file || !root.trim(), type: "submit" }, "Find files and import profile"))), error && /* @__PURE__ */ import_react2.default.createElement("p", { role: "alert" }, error));
 }
 function DownloadConfig({ config }) {
   function download() {
@@ -92,11 +240,11 @@ function DownloadConfig({ config }) {
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1e3);
   }
-  return /* @__PURE__ */ import_react.default.createElement("button", { type: "button", onClick: download }, "Download config JSON");
+  return /* @__PURE__ */ import_react2.default.createElement("button", { type: "button", onClick: download }, "Download config JSON");
 }
 
 // client/EngineHeader.jsx
-var import_react2 = __toESM(require("react"), 1);
+var import_react3 = __toESM(require("react"), 1);
 
 // client/engine-panel.css
 var engine_panel_default = '.dsh-engine-panel[class] {\n  box-sizing: border-box;\n  margin-top: 16px;\n  padding: 18px;\n  min-width: 0;\n  border: 1px solid var(--dsw-alias-border-l3, currentColor);\n  border-radius: 12px;\n  background: var(--dsw-alias-settings-card-fill, transparent);\n  color: var(--dsw-alias-label-primary, inherit);\n  font: inherit;\n}\n.dsh-engine-panel .dsh-engine-header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  flex-wrap: wrap;\n  gap: 12px;\n  padding-bottom: 12px;\n  margin-bottom: 14px;\n  border-bottom: 1px solid var(--dsw-alias-border-l3, currentColor);\n}\n.dsh-engine-header h3 {\n  margin: 0;\n  font-size: 1.1rem;\n  font-weight: 650;\n}\n.dsh-engine-panel .dsh-engine-header h3 small {\n  display: inline;\n  font-size: 0.8rem;\n  font-weight: 400;\n  color: var(--dsw-alias-label-secondary, inherit);\n}\n.dsh-engine-status {\n  margin-top: 4px;\n  font-size: 0.875rem;\n  color: var(--dsw-alias-label-secondary, inherit);\n}\n.dsh-engine-panel[class] button,\n.dsh-engine-panel[class] select,\n.dsh-engine-panel[class]\n  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) {\n  border-radius: 7px;\n  padding: 7px 10px;\n  font: inherit;\n  border: 1px solid var(--dsw-alias-border-l3, currentColor);\n}\n.dsh-engine-panel button:focus-visible,\n.dsh-engine-panel input:focus-visible,\n.dsh-engine-panel select:focus-visible {\n  outline: 2px solid currentColor;\n  outline-offset: 2px;\n}\n/* First model */\n.dsh-engine-panel .dsh-engine-guide {\n  margin: 0 0 12px;\n}\n.dsh-engine-guide summary {\n  cursor: pointer;\n}\n.dsh-engine-guide li {\n  margin: 5px 0;\n}\n';
@@ -104,7 +252,7 @@ var engine_panel_default = '.dsh-engine-panel[class] {\n  box-sizing: border-box
 // package.json
 var package_default = {
   name: "dsh-lfm",
-  version: "0.1.2",
+  version: "0.1.3",
   description: "Local LFM3-1.7B and LFM3-VL-2B models for DeepSeek Harness.",
   type: "module",
   license: "MIT",
@@ -176,13 +324,13 @@ var first_run_default = [
 
 // client/EngineHeader.jsx
 function EngineHeader({ name, status, children }) {
-  return /* @__PURE__ */ import_react2.default.createElement(import_react2.default.Fragment, null, /* @__PURE__ */ import_react2.default.createElement("header", { className: "dsh-engine-header" }, /* @__PURE__ */ import_react2.default.createElement("style", null, engine_panel_default), /* @__PURE__ */ import_react2.default.createElement("div", null, /* @__PURE__ */ import_react2.default.createElement("h3", null, name, " ", /* @__PURE__ */ import_react2.default.createElement("small", null, package_default.version)), /* @__PURE__ */ import_react2.default.createElement("div", { className: "dsh-engine-status" }, status)), children), /* @__PURE__ */ import_react2.default.createElement("details", { className: "dsh-engine-guide" }, /* @__PURE__ */ import_react2.default.createElement("summary", null, "Set up your first model"), /* @__PURE__ */ import_react2.default.createElement("ol", null, first_run_default.map((step) => /* @__PURE__ */ import_react2.default.createElement("li", { key: step }, step)))));
+  return /* @__PURE__ */ import_react3.default.createElement(import_react3.default.Fragment, null, /* @__PURE__ */ import_react3.default.createElement("header", { className: "dsh-engine-header" }, /* @__PURE__ */ import_react3.default.createElement("style", null, engine_panel_default), /* @__PURE__ */ import_react3.default.createElement("div", null, /* @__PURE__ */ import_react3.default.createElement("h3", null, name, " ", /* @__PURE__ */ import_react3.default.createElement("small", null, package_default.version)), /* @__PURE__ */ import_react3.default.createElement("div", { className: "dsh-engine-status" }, status)), children), /* @__PURE__ */ import_react3.default.createElement("details", { className: "dsh-engine-guide" }, /* @__PURE__ */ import_react3.default.createElement("summary", null, "Set up your first model"), /* @__PURE__ */ import_react3.default.createElement("ol", null, first_run_default.map((step) => /* @__PURE__ */ import_react3.default.createElement("li", { key: step }, step)))));
 }
 
 // client/main.jsx
-var import_react3 = __toESM(require("react"), 1);
-var h = import_react3.default.createElement;
-var { useState: useState2, useEffect, useRef } = import_react3.default;
+var import_react4 = __toESM(require("react"), 1);
+var h = import_react4.default.createElement;
+var { useState: useState3, useEffect, useRef } = import_react4.default;
 var cacheTypes = [
   "f16",
   "bf16",
@@ -239,7 +387,7 @@ async function request(action, payload = {}) {
   return body.result;
 }
 function FilePicker({ title, start, onChoose, onCancel, run }) {
-  const [path, setPath] = useState2(start || ""), [listing, setListing] = useState2(null);
+  const [path, setPath] = useState3(start || ""), [listing, setListing] = useState3(null);
   async function open(value) {
     if (/\.gguf$/i.test(value)) return onChoose(value);
     const result = await run(() => request("browse", { path: value }));
@@ -307,10 +455,10 @@ function FilePicker({ title, start, onChoose, onCancel, run }) {
   );
 }
 function Card() {
-  const [data, setData] = useState2({ profiles: [], jobs: [] });
-  const [error, setError] = useState2(""), [busy, setBusy] = useState2(false);
-  const [connectionError, setConnectionError] = useState2("");
-  const [draft, setDraft] = useState2(null), [picker, setPicker] = useState2(null);
+  const [data, setData] = useState3({ profiles: [], jobs: [] });
+  const [error, setError] = useState3(""), [busy, setBusy] = useState3(false);
+  const [connectionError, setConnectionError] = useState3("");
+  const [draft, setDraft] = useState3(null), [picker, setPicker] = useState3(null);
   const seen = useRef(/* @__PURE__ */ new Set());
   const mounted = useRef(true);
   const refresh = async () => {
@@ -463,7 +611,8 @@ function Card() {
               setDraft((p) => ({
                 ...p,
                 context,
-                maxTokens: Math.min(context, p.maxTokens)
+                maxTokens: Math.min(context, p.maxTokens),
+                reasoningModes: p.reasoningModes.map((m) => ({ ...m, maxTokens: Math.min(context, m.maxTokens) }))
               }));
             }
           },
@@ -490,12 +639,7 @@ function Card() {
           cacheTypes.map((v) => [v, labels[v]])
         )
       ),
-      checkbox("Thinking by default", "thinking"),
-      h(
-        "small",
-        null,
-        "Direct mode requests no thinking. Liquid notes that this can be inconsistent."
-      ),
+      h(ReasoningModes, { key: draft.id, draft, setDraft, busy }),
       draft.vision && h(
         "section",
         { className: "lfm-projector" },
