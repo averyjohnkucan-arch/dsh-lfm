@@ -37,8 +37,66 @@ __export(main_exports, {
 });
 module.exports = __toCommonJS(main_exports);
 
-// client/EngineHeader.jsx
+// client/ProfileTransfer.jsx
 var import_react = __toESM(require("react"), 1);
+function ImportConfig({ run, busy }) {
+  const [file, setFile] = (0, import_react.useState)(null);
+  const [root, setRoot] = (0, import_react.useState)("");
+  const [error, setError] = (0, import_react.useState)("");
+  const [reading, setReading] = (0, import_react.useState)(false);
+  async function submit(event) {
+    event.preventDefault();
+    setError("");
+    setReading(true);
+    try {
+      if (!file || file.size > 1024 * 1024)
+        throw Error("Choose a config JSON file smaller than 1 MiB.");
+      const config = JSON.parse(await file.text());
+      await run("import-config", { config, root: root.trim() });
+    } catch (error2) {
+      setError(
+        error2 instanceof SyntaxError ? "This file does not contain valid JSON." : error2.message
+      );
+    } finally {
+      setReading(false);
+    }
+  }
+  return /* @__PURE__ */ import_react.default.createElement("details", null, /* @__PURE__ */ import_react.default.createElement("summary", null, "Import config"), /* @__PURE__ */ import_react.default.createElement("form", { onSubmit: submit }, /* @__PURE__ */ import_react.default.createElement("fieldset", { disabled: busy || reading }, /* @__PURE__ */ import_react.default.createElement("label", null, "Profile JSON", " ", /* @__PURE__ */ import_react.default.createElement(
+    "input",
+    {
+      required: true,
+      type: "file",
+      accept: ".json,application/json",
+      onChange: (e) => setFile(e.target.files[0])
+    }
+  )), /* @__PURE__ */ import_react.default.createElement("label", null, "Model folder on the DSH computer", " ", /* @__PURE__ */ import_react.default.createElement(
+    "input",
+    {
+      required: true,
+      value: root,
+      placeholder: "/path/to/models",
+      onChange: (e) => setRoot(e.target.value)
+    }
+  )), /* @__PURE__ */ import_react.default.createElement("button", { disabled: !file || !root.trim(), type: "submit" }, "Find files and import profile"))), error && /* @__PURE__ */ import_react.default.createElement("p", { role: "alert" }, error));
+}
+function DownloadConfig({ config }) {
+  function download() {
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(config, null, 2) + "\n"], {
+        type: "application/json"
+      })
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = (config.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100) || "profile") + ".dsh-model.json";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1e3);
+  }
+  return /* @__PURE__ */ import_react.default.createElement("button", { type: "button", onClick: download }, "Download config JSON");
+}
+
+// client/EngineHeader.jsx
+var import_react2 = __toESM(require("react"), 1);
 
 // client/engine-panel.css
 var engine_panel_default = '.dsh-engine-panel[class] {\n  box-sizing: border-box;\n  margin-top: 16px;\n  padding: 18px;\n  min-width: 0;\n  border: 1px solid var(--dsw-alias-border-l3, currentColor);\n  border-radius: 12px;\n  background: var(--dsw-alias-settings-card-fill, transparent);\n  color: var(--dsw-alias-label-primary, inherit);\n  font: inherit;\n}\n.dsh-engine-panel .dsh-engine-header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  flex-wrap: wrap;\n  gap: 12px;\n  padding-bottom: 12px;\n  margin-bottom: 14px;\n  border-bottom: 1px solid var(--dsw-alias-border-l3, currentColor);\n}\n.dsh-engine-header h3 {\n  margin: 0;\n  font-size: 1.1rem;\n  font-weight: 650;\n}\n.dsh-engine-panel .dsh-engine-header h3 small {\n  display: inline;\n  font-size: 0.8rem;\n  font-weight: 400;\n  color: var(--dsw-alias-label-secondary, inherit);\n}\n.dsh-engine-status {\n  margin-top: 4px;\n  font-size: 0.875rem;\n  color: var(--dsw-alias-label-secondary, inherit);\n}\n.dsh-engine-panel[class] button,\n.dsh-engine-panel[class] select,\n.dsh-engine-panel[class]\n  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) {\n  border-radius: 7px;\n  padding: 7px 10px;\n  font: inherit;\n  border: 1px solid var(--dsw-alias-border-l3, currentColor);\n}\n.dsh-engine-panel button:focus-visible,\n.dsh-engine-panel input:focus-visible,\n.dsh-engine-panel select:focus-visible {\n  outline: 2px solid currentColor;\n  outline-offset: 2px;\n}\n/* First model */\n.dsh-engine-panel .dsh-engine-guide {\n  margin: 0 0 12px;\n}\n.dsh-engine-guide summary {\n  cursor: pointer;\n}\n.dsh-engine-guide li {\n  margin: 5px 0;\n}\n';
@@ -46,7 +104,7 @@ var engine_panel_default = '.dsh-engine-panel[class] {\n  box-sizing: border-box
 // package.json
 var package_default = {
   name: "dsh-lfm",
-  version: "0.1.2-rc4.1",
+  version: "0.1.2",
   description: "Local LFM3-1.7B and LFM3-VL-2B models for DeepSeek Harness.",
   type: "module",
   license: "MIT",
@@ -118,13 +176,13 @@ var first_run_default = [
 
 // client/EngineHeader.jsx
 function EngineHeader({ name, status, children }) {
-  return /* @__PURE__ */ import_react.default.createElement(import_react.default.Fragment, null, /* @__PURE__ */ import_react.default.createElement("header", { className: "dsh-engine-header" }, /* @__PURE__ */ import_react.default.createElement("style", null, engine_panel_default), /* @__PURE__ */ import_react.default.createElement("div", null, /* @__PURE__ */ import_react.default.createElement("h3", null, name, " ", /* @__PURE__ */ import_react.default.createElement("small", null, package_default.version)), /* @__PURE__ */ import_react.default.createElement("div", { className: "dsh-engine-status" }, status)), children), /* @__PURE__ */ import_react.default.createElement("details", { className: "dsh-engine-guide" }, /* @__PURE__ */ import_react.default.createElement("summary", null, "Set up your first model"), /* @__PURE__ */ import_react.default.createElement("ol", null, first_run_default.map((step) => /* @__PURE__ */ import_react.default.createElement("li", { key: step }, step)))));
+  return /* @__PURE__ */ import_react2.default.createElement(import_react2.default.Fragment, null, /* @__PURE__ */ import_react2.default.createElement("header", { className: "dsh-engine-header" }, /* @__PURE__ */ import_react2.default.createElement("style", null, engine_panel_default), /* @__PURE__ */ import_react2.default.createElement("div", null, /* @__PURE__ */ import_react2.default.createElement("h3", null, name, " ", /* @__PURE__ */ import_react2.default.createElement("small", null, package_default.version)), /* @__PURE__ */ import_react2.default.createElement("div", { className: "dsh-engine-status" }, status)), children), /* @__PURE__ */ import_react2.default.createElement("details", { className: "dsh-engine-guide" }, /* @__PURE__ */ import_react2.default.createElement("summary", null, "Set up your first model"), /* @__PURE__ */ import_react2.default.createElement("ol", null, first_run_default.map((step) => /* @__PURE__ */ import_react2.default.createElement("li", { key: step }, step)))));
 }
 
 // client/main.jsx
-var import_react2 = __toESM(require("react"), 1);
-var h = import_react2.default.createElement;
-var { useState, useEffect, useRef } = import_react2.default;
+var import_react3 = __toESM(require("react"), 1);
+var h = import_react3.default.createElement;
+var { useState: useState2, useEffect, useRef } = import_react3.default;
 var cacheTypes = [
   "f16",
   "bf16",
@@ -181,7 +239,7 @@ async function request(action, payload = {}) {
   return body.result;
 }
 function FilePicker({ title, start, onChoose, onCancel, run }) {
-  const [path, setPath] = useState(start || ""), [listing, setListing] = useState(null);
+  const [path, setPath] = useState2(start || ""), [listing, setListing] = useState2(null);
   async function open(value) {
     if (/\.gguf$/i.test(value)) return onChoose(value);
     const result = await run(() => request("browse", { path: value }));
@@ -249,10 +307,10 @@ function FilePicker({ title, start, onChoose, onCancel, run }) {
   );
 }
 function Card() {
-  const [data, setData] = useState({ profiles: [], jobs: [] });
-  const [error, setError] = useState(""), [busy, setBusy] = useState(false);
-  const [connectionError, setConnectionError] = useState("");
-  const [draft, setDraft] = useState(null), [picker, setPicker] = useState(null);
+  const [data, setData] = useState2({ profiles: [], jobs: [] });
+  const [error, setError] = useState2(""), [busy, setBusy] = useState2(false);
+  const [connectionError, setConnectionError] = useState2("");
+  const [draft, setDraft] = useState2(null), [picker, setPicker] = useState2(null);
   const seen = useRef(/* @__PURE__ */ new Set());
   const mounted = useRef(true);
   const refresh = async () => {
@@ -339,6 +397,7 @@ function Card() {
       return saved;
     });
   }
+  const jobPending = data.jobs.some((job) => ["queued", "running"].includes(job.status));
   const latest = data.jobs.find((j) => j.status === "running") || data.jobs.at(-1);
   const installing = data.jobs.some(
     (j) => j.kind === "Install LFM runtime" && ["running", "queued"].includes(j.status)
@@ -574,6 +633,11 @@ function Card() {
             { className: "lfm-actions" },
             button("Settings", () => setDraft(structuredClone(p))),
             button(
+              "Export config",
+              () => action("export-config", { id: p.id }),
+              busy || jobPending
+            ),
+            button(
               p.status === "running" ? "Unload" : "Load",
               () => action(p.status === "running" ? "stop" : "start", {
                 id: p.id
@@ -616,12 +680,14 @@ function Card() {
       { role: "alert", className: "lfm-error" },
       error || connectionError
     ),
+    !draft && !picker && h(ImportConfig, { run: action, busy: busy || jobPending }),
     contents,
     latest && h(
       "section",
       { className: "lfm-job", "aria-label": "LFM activity" },
       h("strong", null, latest.kind + " \xB7 " + latest.status),
       h("p", { role: "status" }, latest.progress),
+      latest.kind === "Export config" && latest.status === "complete" && h(DownloadConfig, { config: latest.result }),
       rates(latest.metrics),
       latest.result?.prefill !== void 0 && !latest.metrics && rates(latest.result),
       ["queued", "running"].includes(latest.status) && button(

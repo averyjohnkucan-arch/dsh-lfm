@@ -1,3 +1,4 @@
+import { ImportConfig, DownloadConfig } from "./ProfileTransfer.jsx";
 import { EngineHeader } from "./EngineHeader.jsx";
 import React from "react";
 
@@ -241,6 +242,7 @@ import React from "react";
           return saved;
         });
       }
+      const jobPending = data.jobs.some((job) => ["queued", "running"].includes(job.status));
       const latest =
         data.jobs.find((j) => j.status === "running") || data.jobs.at(-1);
       const installing = data.jobs.some(
@@ -491,6 +493,11 @@ import React from "react";
                 { className: "lfm-actions" },
                 button("Settings", () => setDraft(structuredClone(p))),
                 button(
+                  "Export config",
+                  () => action("export-config", { id: p.id }),
+                  busy || jobPending,
+                ),
+                button(
                   p.status === "running" ? "Unload" : "Load",
                   () =>
                     action(p.status === "running" ? "stop" : "start", {
@@ -538,6 +545,8 @@ import React from "react";
             { role: "alert", className: "lfm-error" },
             error || connectionError,
           ),
+        !draft && !picker &&
+          h(ImportConfig, { run: action, busy: busy || jobPending }),
         contents,
         latest &&
           h(
@@ -545,6 +554,8 @@ import React from "react";
             { className: "lfm-job", "aria-label": "LFM activity" },
             h("strong", null, latest.kind + " · " + latest.status),
             h("p", { role: "status" }, latest.progress),
+            latest.kind === "Export config" && latest.status === "complete" &&
+              h(DownloadConfig, { config: latest.result }),
             rates(latest.metrics),
             latest.result?.prefill !== undefined &&
               !latest.metrics &&

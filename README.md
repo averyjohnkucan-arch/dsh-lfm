@@ -1,6 +1,14 @@
 # LFM for DeepSeek Harness
 
-**RC4 installation trial.** Start DeepSeek Harness with `npx @deepseek-ai/dsh@0.2.2-rc.4 web` (Node.js 24.9 or newer). In **Plugins → Add plugin**, paste the full path to this RC4 trial’s `.tgz` file and enable the plugin.
+Requires DeepSeek Harness 0.2.2-rc.4 and Node.js 24.9 or newer. In **Plugins → Add plugin**, paste `https://github.com/averyjohnkucan-arch/dsh-lfm` and enable it.
+
+## Move or back up a saved profile
+
+1. Save your settings, then choose **Export config** on the model. When the file check finishes, choose **Download config JSON**.
+2. On the destination computer, open **Import config**, choose the JSON and enter the folder containing your model weights. Choose **Find files and import profile**.
+3. Select the imported profile in chat. Import creates a separate saved profile and uses size and full-file MD5 to match existing weights. The JSON contains settings and file identities. Keep the weight files separately.
+
+GPU device numbers, ports, runtime paths and credentials are local to the destination.
 
 A small local provider for **LiquidAI LFM3-1.7B** and **LFM3-VL-2B**. It accepts GGUF weight quantizations supported by the included llama.cpp release, including unquantized BF16 and FP16. Other model families and raw Safetensors are not accepted.
 
