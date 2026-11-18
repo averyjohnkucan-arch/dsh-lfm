@@ -4,18 +4,18 @@ import { mkdtemp, rm, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
-import { verifyEngine, installEngine } from "../lib/engine-install.js";
+import { verifyEngine, installEngine, release } from "../lib/engine-install.js";
 
 test("installed runtime reuse verifies files and detects corruption", async (t) => {
   const root = await mkdtemp(join(tmpdir(), "lfm-engine-"));
   t.after(() => rm(root, { recursive: true, force: true }));
-  const target = join(root, "engine", "b11960-cpu");
+  const target = join(root, "engine", `${release}-cpu`);
   await mkdir(target, { recursive: true });
   await writeFile(join(target, "lfm-server"), "fixture");
   await writeFile(
     join(target, "installed.json"),
     JSON.stringify({
-      key: "b11960-cpu",
+      key: `${release}-cpu`,
       files: [
         {
           name: "lfm-server",
@@ -35,7 +35,7 @@ test("installed runtime reuse verifies files and detects corruption", async (t) 
     join(target, "lfm-server"),
   );
   await writeFile(join(target, "lfm-server"), "changed");
-  await assert.rejects(verifyEngine(target, "b11960-cpu"), /checksum/);
+  await assert.rejects(verifyEngine(target, `${release}-cpu`), /checksum/);
 });
 test("bad downloads fail verification, staging is removed, and retry can start", async (t) => {
   const root = await mkdtemp(join(tmpdir(), "lfm-engine-bad-"));

@@ -49,7 +49,7 @@ Switching modes or saving only request settings keeps a loaded model in memory. 
 
 ## Runtime and storage
 
-The plugin downloads checksum-pinned, **unmodified official llama.cpp b11960** binaries directly from GitHub. Installation is a cancellable background job with a Retry button. Linux x64 uses CUDA 12.8 when NVIDIA is available, otherwise CPU. Apple Silicon uses the official Metal build. Other systems can supply a compatible `llama-server` executable. Linux CUDA has been tested; other platforms have not been qualified here.
+The plugin downloads checksum-pinned, **unmodified official llama.cpp b12088** binaries directly from GitHub. This build supports LiquidAI’s [LFM3-1.7B-NVFP4 GGUF](https://huggingface.co/LiquidAI/LFM3-1.7B-GGUF#nvfp4-gguf). Import the GGUF as a model file and use the downloaded runtime. Installation is a cancellable background job with a Retry button. Linux x64 uses CUDA 12.8 when NVIDIA is available, otherwise CPU. Apple Silicon uses the official Metal build. Other systems can supply a compatible `llama-server` executable. Linux CUDA has been tested; other platforms have not been qualified here.
 
 Profiles and the private runtime live in `$DSH_HOME/dsh-lfm`, or `~/.dsh/dsh-lfm`. Models and projectors stay at their selected paths. Native prompt caching operates inside the running server; this plugin does not claim persistent SSD conversation checkpoints.
 
@@ -59,6 +59,6 @@ Only plugin-owned engines are stopped. An active model in another GPU process mu
 
 Node 24.9+; peer dependencies match DSH 0.2.2-rc.4. Run `npm install`, `npm test`, and `npm run check`. The plugin has no Python or compilation requirement. Tests use synthetic GGUF headers and an isolated DOM; native integration validation is recorded separately.
 
-Sources: [text model](https://huggingface.co/LiquidAI/LFM3-1.7B), [vision model](https://huggingface.co/LiquidAI/LFM3-VL-2B), [runtime release](https://github.com/ggml-org/llama.cpp/releases/tag/b11960). The bounded GGUF reader and process/job helpers were adapted from the MIT-licensed [dsh-dory](https://github.com/averyjohnkucan-arch/dsh-dory) plugin. Neither Strata nor NInfer is a dependency.
+Sources: [text model](https://huggingface.co/LiquidAI/LFM3-1.7B), [vision model](https://huggingface.co/LiquidAI/LFM3-VL-2B), [runtime release](https://github.com/ggml-org/llama.cpp/releases/tag/b12088). The bounded GGUF reader and process/job helpers were adapted from the MIT-licensed [dsh-dory](https://github.com/averyjohnkucan-arch/dsh-dory) plugin. Neither Strata nor NInfer is a dependency.
 
 See [validation notes](docs/validation.md) for the tested hardware, measurements, and limitations.

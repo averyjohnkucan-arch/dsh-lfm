@@ -272,7 +272,7 @@ var engine_panel_default = '.dsh-engine-panel[class] {\n  box-sizing: border-box
 // package.json
 var package_default = {
   name: "dsh-lfm",
-  version: "0.1.4",
+  version: "0.1.5",
   description: "Local LFM3-1.7B and LFM3-VL-2B models for DeepSeek Harness.",
   type: "module",
   license: "MIT",

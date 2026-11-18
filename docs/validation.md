@@ -1,5 +1,18 @@
 # Validation
 
+## LFM3-1.7B NVFP4 on Harness RC4
+
+On an RTX PRO 5000 Blackwell Laptop GPU, the official CUDA 12.8 build of llama.cpp b12088 answered a geography question and an arithmetic question correctly with both NVFP4 and BF16 weights. The previous b11960 build returned repeated punctuation for the NVFP4 geography prompt. [LiquidAI’s model card](https://huggingface.co/LiquidAI/LFM3-1.7B-GGUF#nvfp4-gguf) specifies b12088 or newer for this file.
+
+The LFM benchmark used 792 uncached prompt tokens, 256 generated tokens, Thinking enabled, temperature zero, a 262,144-token context allocation, FP16 KV, batch 512 and microbatch 128. Rates below are medians. They exclude model loading.
+
+| Weights | Runs | Prompt tokens/s | Generated tokens/s |
+| --- | ---: | ---: | ---: |
+| NVFP4 | 4 | 9,414 | 266.1 |
+| BF16 | 3 | 4,898 | 136.0 |
+
+## Earlier runtime checks
+
 Validated on Linux x64 with an NVIDIA RTX PRO 5000 Blackwell Laptop GPU (24 GiB, SM120), using the unmodified official llama.cpp b11960 CUDA 12.8 release.
 
 - All 13 automated tests passed: model identification, GGUF quantization metadata, complete/missing shards, projector discovery and ambiguity, saved settings, real React file selection, DSH request conversion, endpoint authentication, installer reuse/corruption/cancellation, and plugin lifecycle.
